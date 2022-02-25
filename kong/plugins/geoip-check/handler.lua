@@ -17,7 +17,6 @@ local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
 local geoip_db = nil
 -- Local cache
 local geoip_cache = {}
-local parsed_whitelist_cidrs = nil
 -- Cache TTL (24 hours in seconds)
 local ttl = 86400
 
@@ -59,10 +58,12 @@ local function check_country_code(country_code, whitelist_country_codes, blackli
 end
 
 local function check_cidr(ip_addr, whitelist_cidrs)
-    if parsed_whitelist_cidrs == nil then
-        parsed_whitelist_cidrs = iputils.parse_cidrs(whitelist_cidrs)
+    local parsed_cidrs = iputils.parse_cidrs(whitelist_cidrs)
+    local result = #parsed_cidrs > 0 and iputils.ip_in_cidrs(ip_addr, parsed_cidrs)
+    if result then
+        kong.log.info("geoip-check: IP ", ip_addr, " allowed with whitelisted CIDRs")
     end
-    return # parsed_whitelist_cidrs > 0 and iputils.ip_in_cidrs(ip_addr, parsed_whitelist_cidrs)
+    return result
 end
 
 local function get_country_from_ip(ip_addr)
