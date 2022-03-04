@@ -37,6 +37,7 @@ return {
                 { whitelist_countries = whitelist_countries_array },
                 { blacklist_countries = blacklist_countries_array },
                 { whitelist_cidrs = whitelist_cidrs_array },
+                { allow_passthrough = { type = "boolean", default = false } },
             }
         }},
     },

@@ -102,15 +102,17 @@ function GeoIpHandler:access(config)
     end
 
     local is_allowed = check_country_code(country_code, config.whitelist_countries, config.blacklist_countries) or check_cidr(ngx.var.remote_addr, config.whitelist_cidrs)
-    kong.response.set_header(country_code_header_name, country_code)
-    kong.response.set_header(eligible_header_name, is_allowed and "true" or "false")
-    ngx.req.set_header(country_code_header_name, country_code)
-    ngx.req.set_header(eligible_header_name, is_allowed and "true" or "false")
-    -- if not is_allowed then
-    --     ngx.status = 403
-    --     ngx.say("Forbidden in originating region")
-    --     ngx.exit(ngx.HTTP_FORBIDDEN)
-    -- end
+
+    if is_allowed or config.allow_passthrough then
+        kong.response.set_header(country_code_header_name, country_code)
+        kong.response.set_header(eligible_header_name, is_allowed and "true" or "false")
+        ngx.req.set_header(country_code_header_name, country_code)
+        ngx.req.set_header(eligible_header_name, is_allowed and "true" or "false")
+    else
+        ngx.status = 403
+        ngx.say("Forbidden in originating region")
+        ngx.exit(ngx.HTTP_FORBIDDEN)
+    end
 end
 
 GeoIpHandler.PRIORITY = 1010
