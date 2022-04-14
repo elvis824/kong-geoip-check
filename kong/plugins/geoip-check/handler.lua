@@ -48,13 +48,26 @@ local function array_contains(arr, target)
     return false
 end
 
-local function check_country_code(country_code, whitelist_country_codes, blacklist_country_codes) 
+local function check_country_code(country_code, whitelist_country_codes, blacklist_country_codes_soft, blacklist_country_codes_hard) 
+    local is_allowed
+    local is_eligible
     -- whitelist takes precedence, use blacklist only when whitelist is empty
     if # whitelist_country_codes == 0 then
-        return not array_contains(blacklist_country_codes, country_code)
+        if array_contains(blacklist_country_codes_hard, country_code) then
+            is_allowed = false
+            is_eligible = false
+        elseif array_contains(blacklist_country_codes_soft, country_code) then
+            is_allowed = true
+            is_eligible = false
+        else 
+            is_allowed = true
+            is_eligible = true
+        end
     else
-        return array_contains(whitelist_country_codes, country_code)
+        is_allowed = array_contains(whitelist_country_codes, country_code)
+        is_eligible = is_allowed
     end
+    return is_allowed, is_eligible
 end
 
 local function check_cidr(ip_addr, whitelist_cidrs)
@@ -101,13 +114,17 @@ function GeoIpHandler:access(config)
         country_code = get_country_from_ip(ngx.var.remote_addr)
     end
 
-    local is_allowed = check_country_code(country_code, config.whitelist_countries, config.blacklist_countries) or check_cidr(ngx.var.remote_addr, config.whitelist_cidrs)
+    local is_allowed, is_eligible = check_country_code(country_code, config.whitelist_countries, config.blacklist_countries_soft, config.blacklist_countries_hard)
+    if not is_allowed and check_cidr(ngx.var.remote_addr, config.whitelist_cidrs) then
+        is_allowed = true
+        is_eligible = true
+    end
 
-    if is_allowed or config.allow_passthrough then
+    if is_allowed then
         kong.response.set_header(country_code_header_name, country_code)
-        kong.response.set_header(eligible_header_name, is_allowed and "true" or "false")
+        kong.response.set_header(eligible_header_name, is_eligible and "true" or "false")
         ngx.req.set_header(country_code_header_name, country_code)
-        ngx.req.set_header(eligible_header_name, is_allowed and "true" or "false")
+        ngx.req.set_header(eligible_header_name, is_eligible and "true" or "false")
     else
         ngx.status = 403
         ngx.say("Forbidden in originating region")

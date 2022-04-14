@@ -1,8 +1,8 @@
 package = "kong-geoip-check"
-version = "1.4.0-0"
+version = "1.5.0-0"
 source = {
     url = "https://github.com/elvis824/kong-geoip-check",
-    tag = "v1.4.0",
+    tag = "v1.5.0",
     dir = "geoip-check",
 }
 description = {

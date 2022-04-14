@@ -11,7 +11,15 @@ local whitelist_countries_array = {
     },
 }
 
-local blacklist_countries_array = {
+local blacklist_countries_soft_array = {
+    type = "array",
+    default = {},
+    elements = {
+        type = "string",
+    },
+}
+
+local blacklist_countries_hard_array = {
     type = "array",
     default = {},
     elements = {
@@ -35,9 +43,9 @@ return {
             type = "record",
             fields = {
                 { whitelist_countries = whitelist_countries_array },
-                { blacklist_countries = blacklist_countries_array },
+                { blacklist_countries_soft = blacklist_countries_soft_array },
+                { blacklist_countries_hard = blacklist_countries_hard_array },
                 { whitelist_cidrs = whitelist_cidrs_array },
-                { allow_passthrough = { type = "boolean", default = false } },
             }
         }},
     },
