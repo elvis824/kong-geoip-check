@@ -48,9 +48,8 @@ local function array_contains(arr, target)
     return false
 end
 
-local function check_country_code(country_code, whitelist_country_codes, blacklist_country_codes_soft, blacklist_country_codes_hard) 
-    local is_allowed
-    local is_eligible
+local function check_country_code(country_code, blacklist_country_codes_soft, blacklist_country_codes_hard, whitelist_country_codes, allow_non_whitelist_passthrough) 
+    local is_allowed, is_eligible
     -- whitelist takes precedence, use blacklist only when whitelist is empty
     if # whitelist_country_codes == 0 then
         if array_contains(blacklist_country_codes_hard, country_code) then
@@ -64,8 +63,8 @@ local function check_country_code(country_code, whitelist_country_codes, blackli
             is_eligible = true
         end
     else
-        is_allowed = array_contains(whitelist_country_codes, country_code)
-        is_eligible = is_allowed
+        is_eligible = array_contains(whitelist_country_codes, country_code)
+        is_allowed = is_eligible or allow_non_whitelist_passthrough
     end
     return is_allowed, is_eligible
 end
@@ -114,7 +113,7 @@ function GeoIpHandler:access(config)
         country_code = get_country_from_ip(ngx.var.remote_addr)
     end
 
-    local is_allowed, is_eligible = check_country_code(country_code, config.whitelist_countries, config.blacklist_countries_soft, config.blacklist_countries_hard)
+    local is_allowed, is_eligible = check_country_code(country_code, config.blacklist_countries_soft, config.blacklist_countries_hard, config.whitelist_countries, config.allow_non_whitelist_passthrough)
     if not is_allowed and check_cidr(ngx.var.remote_addr, config.whitelist_cidrs) then
         is_allowed = true
         is_eligible = true

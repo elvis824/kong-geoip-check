@@ -43,6 +43,7 @@ return {
             type = "record",
             fields = {
                 { whitelist_countries = whitelist_countries_array },
+                { allow_non_whitelist_passthrough = { type = "boolean", default = false }},
                 { blacklist_countries_soft = blacklist_countries_soft_array },
                 { blacklist_countries_hard = blacklist_countries_hard_array },
                 { whitelist_cidrs = whitelist_cidrs_array },
