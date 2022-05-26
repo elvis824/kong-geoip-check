@@ -114,9 +114,9 @@ function GeoIpHandler:access(config)
     end
 
     local is_allowed, is_eligible = check_country_code(country_code, config.blacklist_countries_soft, config.blacklist_countries_hard, config.whitelist_countries, config.allow_non_whitelist_passthrough)
-    if not is_allowed and check_cidr(ngx.var.remote_addr, config.whitelist_cidrs) then
-        is_allowed = true
+    if not is_eligible and check_cidr(ngx.var.remote_addr, config.whitelist_cidrs) then
         is_eligible = true
+        is_allowed = true
     end
 
     if is_allowed then
