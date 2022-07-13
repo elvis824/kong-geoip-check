@@ -1,8 +1,8 @@
 package = "kong-geoip-check"
-version = "1.5.1-0"
+version = "2.0.0-0"
 source = {
-    url = "https://github.com/elvis824/kong-geoip-check",
-    tag = "v1.5.1",
+    url = "https://gitlab.com/elvis824/kong-geoip-check",
+    tag = "v2.0.0",
     dir = "geoip-check",
 }
 description = {
@@ -10,12 +10,12 @@ description = {
     detailed = [[
         kong-geoip-check is a Kong plugin for implementing GeoIP access list. It makes use of MaxMinds GeoIP database to determine originating country of a given IP address.
     ]],
-    homepage = "https://github.com/elvis824/kong-geoip-check",
+    homepage = "https://gitlab.com/elvis824/kong-geoip-check",
     license = "Apache 2.0"
 }
 dependencies = {
     "lua >= 5.1",
-    "lua-geoip ~> 0.2-1",
+    "mmdblua ~> 0.2",
     "lua-resty-iputils ~> 0.3.0-1"
 }
 build = {

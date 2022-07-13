@@ -1,24 +1,23 @@
 local base_plugin = require "kong.plugins.base_plugin"
-local GeoIpHandler = base_plugin:extend()
-local geoip_module = require "geoip"
-local geoip_country = require "geoip.country"
 local iputils = require "resty.iputils"
-
-local geoip_country_filename = "/usr/share/GeoIP/GeoIP.dat"
-local country_code_header_name = "X-Country-Code"
-local eligible_header_name = "X-Eligible"
+local mmdb = require "mmdb"
+local geoip_country_dbfile = "/usr/share/GeoIP/GeoLite2-Country.mmdb"
 
 local kong = kong
 local ngx = ngx
 
--- Grab pluginname from module name
-local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
+local country_code_header_name = "X-Country-Code"
+local eligible_header_name = "X-Eligible"
+
 -- GeoIP database resource
 local geoip_db = nil
 -- Local cache
 local geoip_cache = {}
 -- Cache TTL (24 hours in seconds)
 local ttl = 86400
+
+local GeoIpHandler = base_plugin:extend()
+
 
 local function ip2long(ip_addr)
     local o1,o2,o3,o4 = ip_addr:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")
@@ -85,8 +84,12 @@ local function get_country_from_ip(ip_addr)
 
     if result == nil then
         kong.log.debug("geoip-check: IP ", ip_addr_num, " not found in cache")
-        
-        country_code = geoip_db:query_by_ipnum(ip_addr_num).code
+        local geodata = geoip_db:search_ipv4(ip_addr)
+        if geodata ~= nil and geodata.country ~= nil and geodata.country.iso_code ~= nil then
+            country_code = geodata.country.iso_code
+        else
+            country_code = "--"
+        end
         store_cache(ip_addr_num, country_code)
         kong.log.info("geoip-check: resolved country_code=", country_code)
     else
@@ -99,9 +102,12 @@ end
 function GeoIpHandler:new()
     GeoIpHandler.super.new(self, plugin_name)
     kong.log.info("geoip-check: creating handler")
+end
 
-    -- initialize database
-    geoip_db = geoip_country.open(geoip_country_filename)
+function GeoIpHandler:init_worker()
+    GeoIpHandler.super.init_worker(self)
+    iputils.enable_lrucache()
+    geoip_db = assert(mmdb.read(geoip_country_dbfile))
 end
 
 function GeoIpHandler:access(config)
